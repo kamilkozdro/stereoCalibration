@@ -3,13 +3,6 @@
 #include <time.h>
 #include <iostream>
 
-#define RGB 1
-#define HSV 2
-#define KEY_y 121
-#define KEY_n 110
-#define KEY_1 49
-#define KEY_2 50
-
 using namespace std;
 
 class CStereoCalibration
@@ -24,11 +17,9 @@ public:
 	int openCameras(int leftCamID, int rightCamID);
 	int closeCameras();
 	void saveSettings(char* path);
-	void saveFilterParameters(char* path, int method, vector<int> mins, vector<int> maxs);
 	void showImage(cv::Mat image, bool waitForKey);
 	void showImage(char* windowName, cv::Mat image, bool waitForKey);
 	int runStereoCalibration();
-	int runFilterCalibration();
 
 	inline void timerStart() { timer = (double)cv::getTickCount(); };
 	inline double timerElapsed() { return ((double)cv::getTickCount() - timer) / cv::getTickFrequency(); };

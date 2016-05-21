@@ -146,10 +146,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="FilterCalibration.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="StereoCalibration.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FilterCalibration.h" />
     <ClInclude Include="StereoCalibration.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

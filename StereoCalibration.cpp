@@ -95,10 +95,16 @@ int CStereoCalibration::openCameras(int leftCamID, int rightCamID)
 {
 	leftCam.open(leftCamID);
 	if (!leftCam.isOpened())
+	{
+		cout << "Nie mozna uruchomic kamery ID:" << leftCamID << endl;
 		return 0;
+	}
 	rightCam.open(rightCamID);
 	if (!rightCam.isOpened())
+	{
+		cout << "Nie mozna uruchomic kamery ID:" << rightCamID << endl;
 		return 0;
+	}
 
 	camsOpened = true;
 	return 1;
@@ -139,30 +145,6 @@ void CStereoCalibration::saveSettings(char* path)
 	fileStream << "imageSize" << imageSize;
 	fileStream << "errorRMS" << error_rms;
 	fileStream.release();
-}
-
-void CStereoCalibration::saveFilterParameters(char* path, int method, vector<int> mins, vector<int> maxs)
-{
-	FileStorage fileStream;
-	time_t actualTime;
-	string minsString = "min";
-	string maxsString = "max";
-
-	fileStream.open(path, FileStorage::WRITE);
-	time(&actualTime);
-	fileStream << "Date" << asctime(localtime(&actualTime));
-	if(method == RGB)
-		fileStream << "method" << "RGB";
-	else if(method == HSV)
-		fileStream << "method" << "HSV";
-	else
-		fileStream << "method" << "unknown";
-	fileStream << "min1" << mins[0];
-	fileStream << "min2" << mins[1];
-	fileStream << "min3" << mins[2];
-	fileStream << "max1" << maxs[0];
-	fileStream << "max2" << maxs[1];
-	fileStream << "max3" << maxs[2];
 }
 
 void CStereoCalibration::showImage(Mat image, bool waitForKey = false)
@@ -222,86 +204,6 @@ int CStereoCalibration::runStereoCalibration()
 		((double)cv::getTickCount() - timerCalibrate) / cv::getTickFrequency() << endl << endl;
 
 	std::cout << "ZAKONCZONO KALIBRACJE!\nBLAD RMS = "<< error_rms << endl;
-
-	return 1;
-}
-
-int CStereoCalibration::runFilterCalibration()
-{
-	if (!camsOpened)
-		return -1;
-
-	Mat frame, filteredFrame;
-
-	vector<int> min(3,0);
-	vector<int> max(3,255);
-	char keyPressed = 0;
-	int method = 0;
-
-	namedWindow("cam");
-	namedWindow("filtered");
-
-	String trackbarNames[6];
-
-	leftCam >> frame;
-	putText(frame, "RGB/HSV? (1/2)", Point(frame.cols / 3, frame.rows / 2), 1, 3, CvScalar(0, 255, 0), 2);
-	imshow("cam", frame);
-
-	while (keyPressed != KEY_1 && keyPressed != KEY_2)
-		keyPressed = waitKey();
-	if (keyPressed == KEY_1)
-		method = RGB;
-	else if (keyPressed == KEY_2)
-		method = HSV;
-	else
-		method = 0;
-
-	std::cout << "metoda: " << method << endl;
-	if (method == RGB)
-	{
-		trackbarNames[0] = "Bmin";
-		trackbarNames[1] = "Gmin";
-		trackbarNames[2] = "Rmin";
-		trackbarNames[3] = "Bmax";
-		trackbarNames[4] = "Gmax";
-		trackbarNames[5] = "Rmax";
-	}
-	else if (method == HSV)
-	{
-		trackbarNames[0] = "Hmin";
-		trackbarNames[1] = "Smin";
-		trackbarNames[2] = "Vmin";
-		trackbarNames[3] = "Hmax";
-		trackbarNames[4] = "Smax";
-		trackbarNames[5] = "Vmax";
-	}
-	else
-		return 0;
-
-	for (int i = 0; i < 3; i++)
-	{
-		createTrackbar(trackbarNames[i], "filtered", &min[i], 255);
-		createTrackbar(trackbarNames[i+3], "filtered", &max[i], 255);
-	}
-
-	while (waitKey(20) == -1)
-	{
-		leftCam >> frame;
-		imshow("cam", frame);
-
-		if (method == HSV)
-			cvtColor(frame, frame, CV_BGR2HSV);
-		inRange(frame, Scalar(min[0], min[1], min[2]), Scalar(max[0], max[1], max[2]), filteredFrame);
-		
-		imshow("filtered", filteredFrame);
-	}
-	putText(frame, "SAVE? (y/n)", Point(frame.cols / 3, frame.rows / 2), 1, 3, CvScalar(0, 255, 0), 3);
-	imshow("cam", frame);
-
-	while (keyPressed != KEY_y && keyPressed != KEY_n)
-		keyPressed = waitKey();
-	if (keyPressed == KEY_y)
-		saveFilterParameters("filterParameters.xml", method, min, max);
 
 	return 1;
 }
