@@ -28,7 +28,7 @@ vector<vector<Point3f>> CStereoCalibration::calcObjectPoints(int imagesNumber)
 	vector<vector<Point3f>> objectPoints;
 
 	objectPoints.resize(imagesNumber);
-	// zalozenie: wszystkie pola w osi Z = 0; rownolegle do obiektywu
+	// zalozenie: wszystkie pola w osi Z = 0;
 	for (int i = 0; i < imagesNumber; i++)
 	{
 		for (int j = 0; j < chessboardSize.height; j++)
@@ -48,14 +48,12 @@ int CStereoCalibration::getCalibImagePoints(vector<Mat>& frames, int delay = 2)
 
 	for (int i = 0; i < frames.size(); i++)
 	{
-			imwrite("kalibracja.png", frames[0]);
 		leftFound = findChessboardCorners(frames[i], chessboardSize, leftImagePointsBuffer,
-			CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE | CV_CALIB_CB_FAST_CHECK);	//CV_CALIB_CB_FILTER_QUADS
+			CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS | CV_CALIB_CB_FAST_CHECK);//CV_CALIB_CB_NORMALIZE_IMAGE );
 		drawChessboardCorners(frames[i], chessboardSize, leftImagePointsBuffer, leftFound);
-			imwrite("kalibracja_zaznacz.png", frames[0]);
 		showImage("leftCam", frames[i], false);
 		rightFound = findChessboardCorners(frames[++i], chessboardSize, rightImagePointsBuffer,
-			CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE | CV_CALIB_CB_FAST_CHECK);	//CV_CALIB_CB_FILTER_QUADS
+			CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS | CV_CALIB_CB_FAST_CHECK);//CV_CALIB_CB_NORMALIZE_IMAGE | CV_CALIB_CB_FAST_CHECK);
 		drawChessboardCorners(frames[i], chessboardSize, rightImagePointsBuffer, rightFound);
 		showImage("rightCam", frames[i], false);
 	
@@ -69,6 +67,7 @@ int CStereoCalibration::getCalibImagePoints(vector<Mat>& frames, int delay = 2)
 		{
 			if (timerElapsed() >= delay || timer == 0)
 			{
+				/*
 				Mat grayFrame;
 				cvtColor(frames[0], grayFrame, CV_BGR2GRAY);
 				cornerSubPix(grayFrame, leftImagePointsBuffer, Size(11, 11),
@@ -76,11 +75,12 @@ int CStereoCalibration::getCalibImagePoints(vector<Mat>& frames, int delay = 2)
 				cvtColor(frames[1], grayFrame, CV_BGR2GRAY);
 				cornerSubPix(grayFrame, rightImagePointsBuffer, Size(11, 11),
 					Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
+					*/
 				leftImagePoints.push_back(leftImagePointsBuffer);
 				leftCalibFrames.push_back(frames[i - 1]);
 				rightImagePoints.push_back(rightImagePointsBuffer);
 				rightCalibFrames.push_back(frames[i]);
-				std::cout << "FRAMES: " << leftCalibFrames.size() << endl;
+				std::cout << "PROBKI: " << leftCalibFrames.size() << endl;
 				timerStart();
 			}
 		}
@@ -171,14 +171,19 @@ int CStereoCalibration::runStereoCalibration()
 
 	namedWindow("leftCam");
 	namedWindow("rightCam");
-
+	//string left = "C:/Users/Hp/Desktop/Air/praca mgr/testy/kalibracja/left";
+	//string right = "C:/Users/Hp/Desktop/Air/praca mgr/testy/kalibracja/right";
+	//string format = ".jpg";
+	//int i = 1;
 	vector<Mat> frames(2);
-	while (leftCalibFrames.size() < samplesRequired)
+	while (leftCalibFrames.size() < samplesRequired)	//
 	{
 		waitKey(1);	// inaczej nie wyswietla podgladu
-		leftCam >> frames[0];
-		rightCam >> frames[1];
-		getCalibImagePoints(frames);
+		//cout << "i = " << i << endl;
+		leftCam >> frames[0];//frames[0] = imread(left + std::to_string(i) + format);	//
+		rightCam >> frames[1];//frames[1] = imread(right + std::to_string(i) + format);	//
+		getCalibImagePoints(frames,5);
+		//++i;
 	}
 
 	imageSize = leftCalibFrames[0].size();
@@ -193,6 +198,8 @@ int CStereoCalibration::runStereoCalibration()
 		leftCameraMat, leftCameraDistorsion, rightCameraMat, rightCameraDistorsion,
 		imageSize, rotationMat, translationMat, essentialMat, fundamentalMat,
 		CALIB_ZERO_TANGENT_DIST +
+		CALIB_FIX_FOCAL_LENGTH +
+		CALIB_FIX_ASPECT_RATIO +
 		CALIB_SAME_FOCAL_LENGTH,
 		TermCriteria(TermCriteria::COUNT + TermCriteria::EPS, 100, 1e-5));
 	stereoRectify(leftCameraMat, leftCameraDistorsion, rightCameraMat, rightCameraDistorsion,
@@ -200,10 +207,9 @@ int CStereoCalibration::runStereoCalibration()
 		leftRectificationMat, rightRectificationMat, 
 		leftProjectionMat, rightProjectionMat, disparityToDepthMat, 0, -1, imageSize, &leftValidPixROI, &rightValidPixROI);
 
+	std::cout << "ZAKONCZONO KALIBRACJE!\nBLAD RMS = " << error_rms << endl;
 	std::cout << "CZAS KALIBRACJI DLA " << samplesRequired << " PROBEK WYNIOSL: " <<
 		((double)cv::getTickCount() - timerCalibrate) / cv::getTickFrequency() << endl << endl;
-
-	std::cout << "ZAKONCZONO KALIBRACJE!\nBLAD RMS = "<< error_rms << endl;
 
 	return 1;
 }
