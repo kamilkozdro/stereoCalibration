@@ -9,6 +9,7 @@ CStereoCalibration::CStereoCalibration()
 	squareSize = 25;
 	timer = 0;
 	samplesRequired = 20;
+	samples = 0;
 }
 
 CStereoCalibration::CStereoCalibration(Size ChessboardSize, int SquareSize, int SamplesRequired)
@@ -17,6 +18,7 @@ CStereoCalibration::CStereoCalibration(Size ChessboardSize, int SquareSize, int 
 	squareSize = SquareSize;
 	timer = 0;
 	samplesRequired = SamplesRequired;
+	samples = 0;
 }
 
 CStereoCalibration::~CStereoCalibration()
@@ -41,7 +43,7 @@ vector<vector<Point3f>> CStereoCalibration::calcObjectPoints(int imagesNumber)
 	return objectPoints;
 }
 
-int CStereoCalibration::getCalibImagePoints(vector<Mat>& frames, int delay = 2)
+int CStereoCalibration::getCalibImagePoints(vector<Mat>& frames, int delay = 4)
 {
 	bool leftFound, rightFound;
 	vector<Point2f>leftImagePointsBuffer, rightImagePointsBuffer;
@@ -49,11 +51,11 @@ int CStereoCalibration::getCalibImagePoints(vector<Mat>& frames, int delay = 2)
 	for (int i = 0; i < frames.size(); i++)
 	{
 		leftFound = findChessboardCorners(frames[i], chessboardSize, leftImagePointsBuffer,
-			CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS | CV_CALIB_CB_FAST_CHECK);//CV_CALIB_CB_NORMALIZE_IMAGE );
+			CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE | CV_CALIB_CB_FAST_CHECK); //CV_CALIB_CB_FILTER_QUADS
 		drawChessboardCorners(frames[i], chessboardSize, leftImagePointsBuffer, leftFound);
 		showImage("leftCam", frames[i], false);
 		rightFound = findChessboardCorners(frames[++i], chessboardSize, rightImagePointsBuffer,
-			CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS | CV_CALIB_CB_FAST_CHECK);//CV_CALIB_CB_NORMALIZE_IMAGE | CV_CALIB_CB_FAST_CHECK);
+			CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE | CV_CALIB_CB_FAST_CHECK);
 		drawChessboardCorners(frames[i], chessboardSize, rightImagePointsBuffer, rightFound);
 		showImage("rightCam", frames[i], false);
 	
@@ -65,22 +67,13 @@ int CStereoCalibration::getCalibImagePoints(vector<Mat>& frames, int delay = 2)
 				
 		if (rightFound && leftFound)
 		{
+			//odstep czasowy pomiedzy pobraniem probek
 			if (timerElapsed() >= delay || timer == 0)
 			{
-				/*
-				Mat grayFrame;
-				cvtColor(frames[0], grayFrame, CV_BGR2GRAY);
-				cornerSubPix(grayFrame, leftImagePointsBuffer, Size(11, 11),
-					Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
-				cvtColor(frames[1], grayFrame, CV_BGR2GRAY);
-				cornerSubPix(grayFrame, rightImagePointsBuffer, Size(11, 11),
-					Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
-					*/
+				samples++;
 				leftImagePoints.push_back(leftImagePointsBuffer);
-				leftCalibFrames.push_back(frames[i - 1]);
 				rightImagePoints.push_back(rightImagePointsBuffer);
-				rightCalibFrames.push_back(frames[i]);
-				std::cout << "PROBKI: " << leftCalibFrames.size() << endl;
+				std::cout << "PROBKI: " << samples << endl;
 				timerStart();
 			}
 		}
@@ -139,9 +132,6 @@ void CStereoCalibration::saveSettings(char* path)
 	fileStream << "leftProjectionMat" << leftProjectionMat;
 	fileStream << "rightRectificationMat" << rightRectificationMat;
 	fileStream << "rightProjectionMat" << rightProjectionMat;
-	fileStream << "disparity2DepthMat" << disparityToDepthMat;
-	fileStream << "leftValidPixROI" << leftValidPixROI;
-	fileStream << "rightValidPixROI" << rightValidPixROI;
 	fileStream << "imageSize" << imageSize;
 	fileStream << "errorRMS" << error_rms;
 	fileStream.release();
@@ -171,24 +161,18 @@ int CStereoCalibration::runStereoCalibration()
 
 	namedWindow("leftCam");
 	namedWindow("rightCam");
-	//string left = "C:/Users/Hp/Desktop/Air/praca mgr/testy/kalibracja/left";
-	//string right = "C:/Users/Hp/Desktop/Air/praca mgr/testy/kalibracja/right";
-	//string format = ".jpg";
-	//int i = 1;
 	vector<Mat> frames(2);
-	while (leftCalibFrames.size() < samplesRequired)	//
+	while (samples < samplesRequired)
 	{
 		waitKey(1);	// inaczej nie wyswietla podgladu
-		//cout << "i = " << i << endl;
-		leftCam >> frames[0];//frames[0] = imread(left + std::to_string(i) + format);	//
-		rightCam >> frames[1];//frames[1] = imread(right + std::to_string(i) + format);	//
-		getCalibImagePoints(frames,5);
-		//++i;
+		leftCam >> frames[0];
+		rightCam >> frames[1];
+		getCalibImagePoints(frames, 5);
 	}
 
-	imageSize = leftCalibFrames[0].size();
-	vector<vector<Point3f>> objectPoints;
-	objectPoints = calcObjectPoints(leftCalibFrames.size());
+	imageSize = frames[0].size();
+	vector<vector<Point3f>> objectPoints = calcObjectPoints(samples);
+
 	leftCameraMat = initCameraMatrix2D(objectPoints, leftImagePoints, imageSize, 0);
 	rightCameraMat = initCameraMatrix2D(objectPoints, rightImagePoints, imageSize, 0);
 

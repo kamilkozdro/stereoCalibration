@@ -1,7 +1,7 @@
 #include "StereoCalibration.h"
 #include "FilterCalibration.h"
 #include "opencv2\opencv.hpp"
-
+//sprawdzenie czy liczba zawiera sie w przedziale
 bool checkRange(int number, int min, int max)
 {
 	if (number >= min && number <= max)
@@ -12,7 +12,7 @@ bool checkRange(int number, int min, int max)
 		return false;
 	}
 }
-
+//pobiera ci¹g znaków z konsoli, sprawdza czy jest liczba i zawiera sie w przedziale
 int inputNumber(int minNumber, int maxNumber)
 {
 	int number;
@@ -38,7 +38,7 @@ int main()
 	choice = inputNumber(1,2);
 	if (choice == 1)
 	{
-		cv::Size chessBoardSize; //(9,6)
+		cv::Size chessBoardSize;
 		int squareSize, minSamples, leftCamID, rightCamID;
 
 		cout << "Podaj szerokosc szachownicy: ";
@@ -48,7 +48,7 @@ int main()
 		cout << "Podaj dlugosc boku pojedynczego pola szachownicy [mm]: ";
 		squareSize = inputNumber(1, 100);
 		cout << "Podaj wymagana liczbe probek: ";
-		minSamples = inputNumber(1, 50);
+		minSamples = inputNumber(5, 50);
 
 		CStereoCalibration stereoCalib(chessBoardSize, squareSize, minSamples);
 

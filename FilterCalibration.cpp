@@ -11,7 +11,6 @@ CFilterCalibration::CFilterCalibration()
 	}
 }
 
-
 CFilterCalibration::~CFilterCalibration()
 {
 }
@@ -49,9 +48,9 @@ void CFilterCalibration::saveFilterParameters(char* path, int method)
 	time(&actualTime);
 	fileStream << "Date" << asctime(localtime(&actualTime));
 	if (method == RGB)
-		fileStream << "method" << "RGB";
+		fileStream << "method" << RGB;
 	else if (method == HSV)
-		fileStream << "method" << "HSV";
+		fileStream << "method" << HSV;
 	else
 		fileStream << "method" << "unknown";
 	fileStream << "min1" << min[0];

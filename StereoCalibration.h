@@ -26,10 +26,10 @@ public:
 
 	bool camsOpened;
 	int samplesRequired;
+	int samples;
 	double timer;
 	double error_rms;
 	cv::VideoCapture leftCam, rightCam;
-	vector<cv::Mat> leftCalibFrames, rightCalibFrames;
 	vector<vector<cv::Point2f>> leftImagePoints, rightImagePoints;
 	cv::Mat leftCameraMat, leftCameraDistorsion, rightCameraMat, rightCameraDistorsion;
 	cv::Mat rotationMat, translationMat, essentialMat, fundamentalMat,
@@ -37,8 +37,6 @@ public:
 		rightRectificationMat, rightProjectionMat;
 	cv::Mat disparityToDepthMat;
 	cv::Mat leftFrame, rightFrame;
-	cv::Mat leftFilteredFrame, rightFilteredFrame;
-	cv::Mat leftTransformedFrame, rightTransformedFrame;
 	cv::Rect leftValidPixROI, rightValidPixROI;
 	cv::Size imageSize;
 	cv::Size chessboardSize;
